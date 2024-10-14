@@ -1,101 +1,61 @@
 #include <stdio.h>
-#include <ctype.h>  
-#include <stdlib.h> 
-#include <string.h> 
 
-#define MAX 100
-typedef struct {
-    int top;
-    char items[MAX];
-} Stack;
+char stack[100];
+int top = -1;
 
-void push(Stack *s, char value) {
-    if (s->top == (MAX - 1)) {
-        printf("Stack Overflow\n");
-        exit(1);
-    }
-    s->items[++(s->top)] = value;
+void push(char c) {
+    stack[++top] = c;
 }
 
-char pop(Stack *s) {
-    if (s->top == -1) {
-        printf("Stack Underflow\n");
-        exit(1);
-    }
-    return s->items[(s->top)--];
+char pop() {
+    return stack[top--];
 }
 
-char peek(Stack *s) {
-    if (s->top == -1) {
-        return '\0';
-    }
-    return s->items[s->top];
-}
-int isOperator(char ch) {
-    return (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^');
-}
-int precedence(char ch) {
-    switch (ch) {
-        case '^': return 3;
-        case '*':
-        case '/': return 2;
-        case '+':
-        case '-': return 1;
-        default: return 0;
-    }
-}
-int isLeftParenthesis(char ch) {
-    return (ch == '(');
-}
-int isRightParenthesis(char ch) {
-    return (ch == ')');
+int precedence(char c) {
+    if (c == '+' || c == '-') return 1;
+    if (c == '*' || c == '/') return 2;
+    return 0;
 }
 
-void infixToPostfix(char infix[], char postfix[]) {
-    Stack s;
-    s.top = -1;
-    int i = 0, j = 0;
-    char symbol;
+int isOperator(char c) {
+    return c == '+' || c == '-' || c == '*' || c == '/';
+}
 
-    while ((symbol = infix[i++]) != '\0') {
-        if (isdigit(symbol) || isalpha(symbol)) {
-            postfix[j++] = symbol;
-        } else if (isLeftParenthesis(symbol)) {
-            // If the symbol is a '(', push it onto the stack
-            push(&s, symbol);
-        } else if (isRightParenthesis(symbol)) {
-            // If the symbol is a ')', pop and output from the stack until '(' is encountered
-            while (!isLeftParenthesis(peek(&s))) {
-                postfix[j++] = pop(&s);
+int isOperand(char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+void infixToPostfix(char *infix, char *postfix) {
+    int i, j = 0;
+    for (i = 0; infix[i]; i++) {
+        if (isOperand(infix[i])) {
+            postfix[j++] = infix[i];
+        } else if (infix[i] == '(') {
+            push(infix[i]);
+        } else if (infix[i] == ')') {
+            while (top != -1 && stack[top] != '(') {
+                postfix[j++] = pop();
             }
-            pop(&s);  // Discard the '('
-        } else if (isOperator(symbol)) {
-            // If the symbol is an operator
-            while (s.top != -1 && precedence(peek(&s)) >= precedence(symbol)) {
-                postfix[j++] = pop(&s);
+            pop();
+        } else if (isOperator(infix[i])) {
+            while (top != -1 && precedence(stack[top]) >= precedence(infix[i])) {
+                postfix[j++] = pop();
             }
-            push(&s, symbol);
+            push(infix[i]);
         }
     }
-
-    // Pop all remaining operators from the stack
-    while (s.top != -1) {
-        postfix[j++] = pop(&s);
+    while (top != -1) {
+        postfix[j++] = pop();
     }
-
     postfix[j] = '\0';
 }
 
 int main() {
-    char infix[MAX], postfix[MAX];
-
+    char infix[100], postfix[100];
     printf("Enter an infix expression: ");
-    fgets(infix, MAX, stdin);  // Read the infix expression from user
-
-    infixToPostfix(infix, postfix);  // Convert to postfix
-
-    printf("Postfix Expression: %s\n", postfix);
-
+    scanf("%s", infix);
+    infixToPostfix(infix, postfix);
+    printf("Postfix expression: %s\n", postfix);
     return 0;
 }
 
